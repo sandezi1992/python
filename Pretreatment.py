@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #!/usr/bin/python
 # -*-coding:utf-8-*-
 # 提取出正负文档中的所有词汇
@@ -135,8 +134,8 @@ airPath = handleChinese('C:\mail\python\邮件样例\旅行')
 advPath = handleChinese('C:\mail\python\邮件样例\广告邮件')
 subscribePath = handleChinese('C:\mail\python\邮件样例\订阅')
 financePath = handleChinese('C:\mail\python\邮件样例\财务')
-posPath = handleChinese('C:\mail\python\\testMail\pos')
-negPath = handleChinese('C:\mail\python\\testMail\\neg')
+posPath = handleChinese('C:\mail\\testMail\pos')
+negPath = handleChinese('C:\mail\\testMail\\neg')
 
 
 def loadDataSet(path):
@@ -280,7 +279,7 @@ def setofWords2Vec(wordBag, article):
 
 
 if __name__ == '__main__':
-    path = 'C:\mail\python\\testMail'
+    path = 'C:\mail\\testMail'
     prePath = 'C:\mail\python\pre'
     totalWordBag, totalFilenNum = createWordBagWithSubject(path)
     listPosts, listClasses = loadDataWithSubject(path)
@@ -409,71 +408,3 @@ stopWordList = stopWordDic.read().splitlines()
 totalWordDic = open("totalWordBag.txt", 'rb')
 totalWordBag = totalWordDic.read().splitlines()
 '''
-=======
-#!/usr/bin/python
-# coding:utf-8
-
-import os
-import jieba
-import sys
-import email
-from email.Iterators import typed_subpart_iterator
-
-reload(sys)
-sys.setdefaultencoding('utf8')
-
-
-def get_charset(message, default="ascii"):
-    """Get the message charset"""
-
-    if message.get_content_charset():
-        # print message.get_content_charset()
-        return message.get_content_charset()
-
-    if message.get_charset():
-        # print message.get_charset()
-        return message.get_charset()
-
-    return default
-
-
-def get_body(message):
-    """Get the body of the email message"""
-
-    if message.is_multipart():
-        # get the html text version only
-        text_parts = [part
-                      for part in typed_subpart_iterator(message,
-                                                         'text',
-                                                         'html')]
-        body = []
-        for part in text_parts:
-            charset = get_charset(part, get_charset(message))
-            body.append(unicode(part.get_payload(decode=True),
-                                charset,
-                                "replace"))
-
-        return u"\n".join(body).strip()
-    else:
-        # if it is not multipart, the payload will be a string
-        # representing the message body
-        body = unicode(message.get_payload(decode=True),
-                       get_charset(message),
-                       "replace")
-        return body.strip()
-
-index = 1
-wordBag = {}
-print "开始创建词袋"
-dirs = os.listdir("finance")
-print dirs
-for dir in dirs:
-
-    pathName = os.path.join("c:/mail/python/finance/", dir)
-    # print pathName
-    print '\n'
-    fp = open(pathName)
-    msg = email.message_from_file(fp)
-    words = get_body(msg)
-   # print index, words'''
->>>>>>> 85922265612230c1672ed1110a41558e888c188d
