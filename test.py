@@ -78,8 +78,8 @@ def handleChinese(ustring):
     return ustring
 
 
-posPath = handleChinese('C:\mail\python\\testMail\pos')
-negPath = handleChinese('C:\mail\python\\testMail\\neg')
+posPath = handleChinese('C:\mail\\testMail\pos')
+negPath = handleChinese('C:\mail\\testMail\\neg')
 
 
 
@@ -146,7 +146,7 @@ def createWordBagWithSubject(path):
 
 
 if __name__ == '__main__':
-    path = 'C:\mail\python\\testMail'
+    path = 'C:\mail\\testMail'
     totalWordBag, totalFilenNum = createWordBagWithSubject(path)
     listPosts, listClasses = loadDataWithSubject(path)
     print "loadDataSet finished"
@@ -164,20 +164,12 @@ if __name__ == '__main__':
     tword = tuple(word)
     ber = BernoulliNB()
     ber.fit(count, y_train)
-    res = ber.predict(count)
     ax, ay = ber.feature_log_prob_
-    preax, preay = ber.predict_log_proba(count)
     tax = tuple(ax)
     tay = tuple(ay)
-    tpreax = tuple(preax)
-    tpreay = tuple(preay)
-    tres = tuple(res)
     axword = zip(tword, tax)
     ayword = zip(tword, tay)
 
-    tpxword = zip(x_train, tpreax, tres)
-    for i, j, k in tpxword:
-        print i, ":", j, ":", k
     res1 = sorted(axword, key=itemgetter(1), reverse=True)
     res2 = sorted(ayword, key=itemgetter(1), reverse=True)
     res1txt = open("res1.txt", 'w')
