@@ -8,7 +8,7 @@ import email
 import email.header
 import chardet
 from email.Iterators import typed_subpart_iterator
-from sklearn import feature_extraction #  noqa
+from sklearn import feature_extraction
 from sklearn import metrics
 from sklearn import svm
 from sklearn.naive_bayes import BernoulliNB
@@ -16,9 +16,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.cross_validation import train_test_split
 from sklearn.cross_validation import StratifiedShuffleSplit
 from sklearn.pipeline import Pipeline
-# from sklearn.feature_selection import chi
 from bs4 import BeautifulSoup
-# from pandas import Series, DataFrame
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer, TfidfTransformer
 from sklearn.cross_validation import cross_val_score, KFold , StratifiedKFold
@@ -28,7 +26,6 @@ import numpy as np
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
-#  MultinomialNB
 stop_words = []
 for line in open("stop_words.txt"):
     line = line.strip('\n')
@@ -127,81 +124,8 @@ def handleChinese(ustring):
     ustring.encode("utf-8")
     return ustring
 
-shoppingPath = handleChinese('C:\mail\python\邮件样例\购物')
-registerPath = handleChinese('C:\mail\python\邮件样例\注册')
-unsubscribePath = handleChinese('C:\mail\python\邮件样例\退订')
-airPath = handleChinese('C:\mail\python\邮件样例\旅行')
-advPath = handleChinese('C:\mail\python\邮件样例\广告邮件')
-subscribePath = handleChinese('C:\mail\python\邮件样例\订阅')
-financePath = handleChinese('C:\mail\python\邮件样例\财务')
 posPath = handleChinese('C:\mail\\testMail\pos')
 negPath = handleChinese('C:\mail\\testMail\\neg')
-
-
-def loadDataSet(path):
-    postingList = []
-    name = []
-    classVec = []
-    for parent, dirname, filenames in os.walk(handleChinese(path)):
-        for filename in filenames:
-            fp = open(os.path.join(parent, filename))
-            msg = email.message_from_file(fp)
-            text = get_body(msg)
-            soup = BeautifulSoup(text, 'html.parser')
-            soupWordsTmp = [word for word in soup.stripped_strings]
-            soupWords = "".join(soupWordsTmp)
-            seg_list = jieba.lcut(soupWords)
-            res = []
-            for tmp in seg_list:
-                if len(tmp) >= 2:
-                    res.append(tmp)
-            postingList.append(res)
-            name.append(filename)
-            if parent == shoppingPath:
-                classVec.append(1)
-            elif parent == registerPath:
-                classVec.append(2)
-            elif parent == unsubscribePath:
-                classVec.append(3)
-            elif parent == airPath:
-                classVec.append(4)
-            elif parent == advPath:
-                classVec.append(5)
-            elif parent == subscribePath:
-                classVec.append(6)
-            elif parent == financePath:
-                classVec.append(7)
-    classVecFile = open("classVecFile.txt", 'w')
-    y = [str(line) + '\n' for line in classVec]
-    for tmp in y:
-        classVecFile.write(tmp)
-    return postingList, classVec
-
-
-# 创建词袋
-def createWordBagWithText(path):
-    totalWordBag = []
-    totalFilenNum = 0
-    for parent, dirname, filenames in os.walk(handleChinese(path)):
-        for filename in filenames:
-            totalFilenNum += 1
-            fp = open(os.path.join(parent, filename))
-            msg = email.message_from_file(fp)
-            text = get_body(msg)
-            soup = BeautifulSoup(text, 'html.parser')
-            soupWordsTmp = [word for word in soup.stripped_strings]
-            soupWords = "".join(soupWordsTmp)
-            seg_list = jieba.lcut(soupWords)
-            res = set(seg_list)
-            for tmp in res:
-                if tmp not in totalWordBag and len(tmp) >= 2 and tmp not in stop_words:
-                    totalWordBag.append(tmp)
-    totalWordBagFile = open("totalWordBag.txt", 'w')
-    wordBag = [line + '\n' for line in totalWordBag]
-    for x in wordBag:
-        totalWordBagFile.write(x)
-    totalWordBagFile.close()
-    return totalWordBag, totalFilenNum
 
 
 def loadDataWithSubject(path):
@@ -267,144 +191,14 @@ def createWordBagWithSubject(path):
     totalWordBagFile.close()
     return totalWordBag, totalFileNum
 
-
-def setofWords2Vec(wordBag, article):
-    returnVec = [0] * len(wordBag)
-    for word in article:
-        if word in wordBag:
-            returnVec[wordBag.index(word)] = 1
-        else:
-            print "the word: %s is not in my Vocabulary!" % word
-    return returnVec
-
-
 if __name__ == '__main__':
     path = 'C:\mail\\testMail'
     prePath = 'C:\mail\python\pre'
     totalWordBag, totalFilenNum = createWordBagWithSubject(path)
     listPosts, listClasses = loadDataWithSubject(path)
-    # totalWordBag, totalFilenNum = createWordBagWithText(path)
-    # listPosts, listClasses = loadDataSet(path)
     print "loadDataSet finished"
-    dataSet = []
-    dataSetTfIdf = []
-    # for index in range(len(listClasses)):
-        # print listPosts[index]
-        # print listClasses[index]
-    # for postinDoc in listPosts:
-        # dataSet.append(setofWords2Vec(totalWordBag, postinDoc))
-    '''x = TfidfVectorizer().fit_transform(listPosts)
-    x_new = SelectKBest(chi2, k=100).fit_transform(x, listClasses)
-    print x_new'''
     x_train, x_test, y_train, y_test = train_test_split(listPosts, listClasses,
          test_size=0.3, stratify=listClasses, random_state=32)
     for nbc in nbcs:
         scores = evaluate_cross_validation(nbc, x_train, y_train, 10)
-    '''nbc_1.fit(x_train, y_train)
-    listPre, listCla = loadDataWithSubject(prePath)
-    pren = nbc_1.predict(listPre)
-    preNev = zip(listPre, pren)
-    count = 0
-    for i, j in preNev:
-        if j == 0:
-            count += 1
-            print i
-    print "count:", count
-    print "Accuracy on testing set:"
-    print nbc_1.score(x_test, y_test)
-    y_predict = nbc_1.predict(x_test)
-    preZip = zip(x_test, y_predict, y_test)
-    for i, j, k in preZip:
-        if j != k:
-            print i
-    print "Classification Report:"
-    print metrics.classification_report(y_test, y_predict)
-    print "Confusion Matrix:"
-    print metrics.confusion_matrix(y_test, y_predict)'''
-    '''tfidf = transformer.fit_transform(vectorizer.fit_transform(x_train))
-    word = vectorizer.get_feature_names()
-    weight = tfidf.toarray()
-    print len(x_train)
-    print len(y_train)
-    print len(x_test)
-    print len(y_test)
-    clfMul = MultinomialNB()
-    clfBer = BernoulliNB()
-    clfSvm = svm.SVC()
-    clfMul.fit(tfidf, y_train)
-    # clfSvm.fit(x_train, y_train)
-    # clfBer.fit(x_train, y_train)
-    # predictedBer = clfBer.predict(x_test)
-    # predictedSvm = clfSvm.predict(x_test)
-    tfidfTest = transformer.fit_transform(vectorizer.fit_transform(x_test))
-    predictedMul = clfMul.predict(tfidfTest)
-    print "matrix Ber:"
-    # print metrics.confusion_matrix(y_test, predictedBer)
-    print "matrix Svm:"
-    # print metrics.confusion_matrix(y_test, predictedSvm)
-    print "matrix Mul:"
-    print metrics.confusion_matrix(y_test, predictedMul)
-    # precisionBer = metrics.precision_score(y_test, predictedBer)
-    # recallBer = metrics.recall_score(y_test, predictedBer)
-    # precisionSvm = metrics.precision_score(y_test, predictedSvm)
-    # recallSvm = metrics.recall_score(y_test, predictedSvm)
-    precisionMul = metrics.precision_score(y_test, predictedMul)
-    recallMul = metrics.recall_score(y_test, predictedMul)
-    # print 'BernoulliNB precison: %.3f' % precisionBer
-    # print 'BernoulliNB recall: %.3f' % recallBer
-    # print 'svm precison: %.3f' % precisionSvm
-    # print 'svm recall: %.3f' % recallSvm
-    # print 'Mul precison: %.3f' % precisionMul
-    # print 'Mul recall: %.3f' % recallMul
-    print "predicted finished"'''
-
-
-'''def createVSM(totalWordBag, path):
-    data = []
-    data1 = ""
-    data2 = ""
-    for parent, dirname, filenames in os.walk(handleChinese(path)):
-        for filename in filenames:
-            fp = open(os.path.join(parent, filename))
-            msg = email.message_from_file(fp)
-            text = get_body(msg)
-            soup = BeautifulSoup(text, 'html.parser')
-            soupWordsTmp = [word for word in soup.stripped_strings]
-            soupWords = "".join(soupWordsTmp)
-            seg_list = jieba.lcut(soupWords)
-            if parent == posPath:
-                data1 = " ".join(seg_list)
-            else:
-                data2 = " ".join(seg_list)
-    data1File = open("data1File.txt", 'w')
-    data1File.write(data1)
-    data2File = open("data2File.txt", 'w')
-    data2File.write(data2)
-    data.append(data1)
-    data.append(data2)
-    vectorizer = CountVectorizer()
-    transformer = TfidfTransformer()
-    tfidf = transformer.fit_transform(vectorizer.fit_transform(data))
-    word = vectorizer.get_feature_names()
-    weight = tfidf.toarray()
-    print data1
-    for i in range(len(weight)):
-        print "-----这里输出第", i, "类文本的词语的tf-idf权重-----"
-        weight[i].sort()
-        for j in range(len(word)):
-            print word[j], weight[i][j]
-        print '第', i, '类文本中总共单词长度', len(word)
-    # df = DataFrame(data)  # index=indexArray, columns=totalWordBag)
-    # dfT = df.T
-    # df.to_csv('C:\mail\python\DataFrame.csv')
-
-
-
-
-
-# dirs = os.listdir(handleChinese(path))
-stopWordDic = open("stop_words.txt", 'rb')
-stopWordList = stopWordDic.read().splitlines()
-totalWordDic = open("totalWordBag.txt", 'rb')
-totalWordBag = totalWordDic.read().splitlines()
-'''
+    print "Predicted finished"
