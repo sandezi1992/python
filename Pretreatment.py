@@ -26,55 +26,6 @@ import numpy as np
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
-stop_words = []
-for line in open("stop_words.txt"):
-    line = line.strip('\n')
-    stop_words.append(line.decode('utf-8'))
-
-
-nbc_1 = Pipeline([
-    ('vect', CountVectorizer(stop_words=stop_words)),
-    ('clf', MultinomialNB()),
-])
-
-nbc_2 = Pipeline([
-    ('vect', TfidfVectorizer(stop_words=stop_words)),
-    ('clf', MultinomialNB()),
-])
-#  BernoulliNB
-nbc_3 = Pipeline([
-    ('vect', CountVectorizer(stop_words=stop_words)),
-    ('clf', BernoulliNB()),
-])
-
-
-nbc_4 = Pipeline([
-    ('vect', TfidfVectorizer()),
-    ('clf', BernoulliNB()),
-])
-# svm
-nbc_5 = Pipeline([
-    ('vect', CountVectorizer(stop_words=stop_words)),
-    ('clf', svm.SVC(kernel='linear')),
-])
-
-
-nbc_6 = Pipeline([
-    ('vect', TfidfVectorizer(stop_words=stop_words)),
-    ('clf', svm.SVC(kernel='linear')),
-])
-
-
-nbcs = [nbc_1, nbc_2, nbc_3, nbc_4, nbc_5, nbc_6]
-
-
-def evaluate_cross_validation(clf, X, y, K):
-    cv = StratifiedKFold(y, K, shuffle=True, random_state=0)
-    scores = cross_val_score(clf, X, y, cv=cv)
-    # print scores
-    print ("Mean score: {0:.3f} (+/-{1:.3f})").format(np.mean(scores),
-                                                      sem(scores))
-    return np.mean(scores)
 
 
 def get_charset(message, default="ascii"):
@@ -123,9 +74,58 @@ def handleChinese(ustring):
     ustring = unicode(ustring, codeDetect)
     ustring.encode("utf-8")
     return ustring
+stop_words = []
+for line in open("stop_words.txt"):
+    line = line.strip('\n')
+    stop_words.append(line.decode('utf-8'))
 
-posPath = handleChinese('C:\mail\\testMail\pos')
-negPath = handleChinese('C:\mail\\testMail\\neg')
+posPath = handleChinese('C:\mail\\trainMail\pos')
+negPath = handleChinese('C:\mail\\trainMail\\neg')
+
+nbc_1 = Pipeline([
+    ('vect', CountVectorizer(stop_words=stop_words)),
+    ('clf', MultinomialNB()),
+])
+
+nbc_2 = Pipeline([
+    ('vect', TfidfVectorizer(stop_words=stop_words)),
+    ('clf', MultinomialNB()),
+])
+#  BernoulliNB
+nbc_3 = Pipeline([
+    ('vect', CountVectorizer(stop_words=stop_words)),
+    ('clf', BernoulliNB()),
+])
+
+
+nbc_4 = Pipeline([
+    ('vect', TfidfVectorizer()),
+    ('clf', BernoulliNB()),
+])
+# svm
+nbc_5 = Pipeline([
+    ('vect', CountVectorizer(stop_words=stop_words)),
+    ('clf', svm.SVC(kernel='linear')),
+])
+
+
+nbc_6 = Pipeline([
+    ('vect', TfidfVectorizer(stop_words=stop_words)),
+    ('clf', svm.SVC(kernel='linear')),
+])
+
+
+nbcs = [nbc_1, nbc_2, nbc_3, nbc_4, nbc_5, nbc_6]
+
+
+def evaluate_cross_validation(clf, X, y, K):
+    cv = StratifiedKFold(y, K, shuffle=True, random_state=0)
+    # cv = KFold(len(y), K, shuffle=True, random_state=0)
+    scores = cross_val_score(clf, X, y, cv=cv)
+    # print scores
+    print ("Mean score: {0:.3f} (+/-{1:.3f})").format(np.mean(scores),
+                                                      sem(scores))
+    return np.mean(scores)
 
 
 def loadDataWithSubject(path):
@@ -192,13 +192,17 @@ def createWordBagWithSubject(path):
     return totalWordBag, totalFileNum
 
 if __name__ == '__main__':
-    path = 'C:\mail\\testMail'
-    prePath = 'C:\mail\python\pre'
-    totalWordBag, totalFilenNum = createWordBagWithSubject(path)
-    listPosts, listClasses = loadDataWithSubject(path)
+    trainPath = 'C:\mail\\trainMail'
+    testPath = 'C:\mail\\testMail'
+    totalWordBag, totalFilenNum = createWordBagWithSubject(trainPath)
+    listPosts, listClasses = loadDataWithSubject(trainPath)
     print "loadDataSet finished"
     x_train, x_test, y_train, y_test = train_test_split(listPosts, listClasses,
-         test_size=0.3, stratify=listClasses, random_state=32)
+        test_size=0.3, stratify=listClasses, random_state=32)
     for nbc in nbcs:
         scores = evaluate_cross_validation(nbc, x_train, y_train, 10)
+    predictListPosts, predictListClasses = loadDataWithSubject(testPath)
+    nbc_5.fit(x_train, y_train)
+    y_pred = nbc_5.predict(predictListPosts)
+    preZip = zip(predictListPosts, y_pred)
     print "Predicted finished"

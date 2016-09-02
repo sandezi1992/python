@@ -78,9 +78,8 @@ def handleChinese(ustring):
     return ustring
 
 
-posPath = handleChinese('C:\mail\\testMail\pos')
-negPath = handleChinese('C:\mail\\testMail\\neg')
-
+posPath = handleChinese('C:\mail\\trainMail\pos')
+negPath = handleChinese('C:\mail\\trainMail\\neg')
 
 
 def loadDataWithSubject(path):
@@ -146,9 +145,9 @@ def createWordBagWithSubject(path):
 
 
 if __name__ == '__main__':
-    path = 'C:\mail\\testMail'
-    totalWordBag, totalFilenNum = createWordBagWithSubject(path)
-    listPosts, listClasses = loadDataWithSubject(path)
+    trainPath = 'C:\mail\\trainMail'
+    totalWordBag, totalFilenNum = createWordBagWithSubject(trainPath)
+    listPosts, listClasses = loadDataWithSubject(trainPath)
     print "loadDataSet finished"
     dataSet = []
     dataSetTfIdf = []
@@ -162,21 +161,21 @@ if __name__ == '__main__':
     count = vectorizer.fit_transform(x_train)
     word = vectorizer.get_feature_names()  # 词的合集
     tword = tuple(word)
-    ber = BernoulliNB()
-    ber.fit(count, y_train)
-    ax, ay = ber.feature_log_prob_
+    svmClf = svm.SVC(kernel='linear')
+    svmClf.fit(count, y_train)
+    ax = svmClf.coef_.transpose()
     tax = tuple(ax)
-    tay = tuple(ay)
+    # tay = tuple(ay)
     axword = zip(tword, tax)
-    ayword = zip(tword, tay)
+    # ayword = zip(tword, tay)
 
     res1 = sorted(axword, key=itemgetter(1), reverse=True)
-    res2 = sorted(ayword, key=itemgetter(1), reverse=True)
+    # res2 = sorted(ayword, key=itemgetter(1), reverse=True)
     res1txt = open("res1.txt", 'w')
-    res2txt = open("res2.txt", 'w')
+    # res2txt = open("res2.txt", 'w')
     for x in res1:
         res1txt.write(x[0] + ':' + str(x[1]) + '\n')
     res1txt.close()
-    for x in res2:
+    '''for x in res2:
         res2txt.write(x[0] + ":" + str(x[1]) + '\n')
-    res2txt.close()
+    res2txt.close()'''
