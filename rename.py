@@ -12,7 +12,7 @@ def handleChinese(ustring):
     ustring.encode("utf-8")
     return ustring
 
-path = 'c:\mail\python\\testMail\pre'
+path = 'c:\mail\\rename'
 for parent, dirname, filenames in os.walk(handleChinese(path)):
     for filename in filenames:
         fp = open(os.path.join(parent, filename))
