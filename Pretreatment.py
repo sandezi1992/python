@@ -199,14 +199,10 @@ def createWordBagWithSubject(path):
     return totalWordBag, totalFileNum
 
 
-def plot_ROC_curve(classifier, X, y, pos_label=1, n_folds=5):
+def plot_ROC_curve(classifier, X, y, pos_label=1, n_folds=10):
     mean_tpr = 0.0
     mean_fpr = np.linspace(0, 1, 100)
     for i, (train, test) in enumerate(StratifiedKFold(y, n_folds=n_folds)):
-        print type(train)
-        print type(test)
-        print train.shape
-        print test.shape
         probas_ = classifier.fit(X[train], y[train]).predict_proba(X[test])
         # Compute ROC curve and area under the curve
         fpr, tpr, thresholds = roc_curve(y[test], probas_[:, 1], pos_label=1)
@@ -236,9 +232,9 @@ if __name__ == '__main__':
     listPosts, listClasses = loadDataWithSubject(trainPath)
     print "loadDataSet finished"
     X = CountVectorizer().fit_transform(listPosts)
-    print X.shape
     y = np.array(listClasses)
-    plot_ROC_curve(svm.SVC(kernel='linear', probability=True), X, y, 10)
+    # plot_ROC_curve(svm.SVC(kernel='linear', probability=True), X, y, 10)
+    plot_ROC_curve(BernoulliNB(), X, y, 10)
     x_train, x_test, y_train, y_test = train_test_split(listPosts, listClasses,
         test_size=0.3, stratify=listClasses, random_state=32)
     for nbc in nbcs:
