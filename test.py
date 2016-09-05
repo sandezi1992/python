@@ -162,8 +162,11 @@ if __name__ == '__main__':
     word = vectorizer.get_feature_names()  # 词的合集
     tword = tuple(word)
     svmClf = svm.SVC(kernel='linear')
+    # berClf = BernoulliNB()
     svmClf.fit(count, y_train)
+    # berClf.fit(count, y_train)
     ax = svmClf.coef_.transpose()
+    # ax, ay = berClf.feature_log_prob_
     tax = tuple(ax)
     # tay = tuple(ay)
     axword = zip(tword, tax)
@@ -171,8 +174,9 @@ if __name__ == '__main__':
 
     res1 = sorted(axword, key=itemgetter(1), reverse=True)
     # res2 = sorted(ayword, key=itemgetter(1), reverse=True)
-    res1txt = open("res1.txt", 'w')
-    # res2txt = open("res2.txt", 'w')
+    # res1txt = open("berClfNeg.txt", 'w')
+    res1txt = open("svmClfCoef.txt", 'w')
+    # res2txt = open("berClfPos.txt", 'w')
     for x in res1:
         res1txt.write(x[0] + ':' + str(x[1]) + '\n')
     res1txt.close()

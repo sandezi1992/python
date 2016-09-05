@@ -9,7 +9,8 @@ import email.header
 import chardet
 from email.Iterators import typed_subpart_iterator
 from sklearn import feature_extraction
-from sklearn import metrics
+from sklearn import metrics, cross_validation
+from sklearn.metrics import auc, roc_auc_score, roc_curve, precision_recall_curve
 from sklearn import svm
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.naive_bayes import MultinomialNB
@@ -22,7 +23,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer, TfidfTransformer
 from sklearn.cross_validation import cross_val_score, KFold , StratifiedKFold
 from sklearn.feature_selection import SelectKBest, chi2
 from scipy.stats import sem
+from scipy import interp
 import numpy as np
+import matplotlib.pyplot as plt
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -81,6 +84,10 @@ for line in open("stop_words.txt"):
 
 posPath = handleChinese('C:\mail\\trainMail\pos')
 negPath = handleChinese('C:\mail\\trainMail\\neg')
+
+wordToNum = Pipeline([
+    ('vect', CountVectorizer(stop_words=stop_words)),
+])
 
 nbc_1 = Pipeline([
     ('vect', CountVectorizer(stop_words=stop_words)),
@@ -191,18 +198,53 @@ def createWordBagWithSubject(path):
     totalWordBagFile.close()
     return totalWordBag, totalFileNum
 
+
+def plot_ROC_curve(classifier, X, y, pos_label=1, n_folds=5):
+    mean_tpr = 0.0
+    mean_fpr = np.linspace(0, 1, 100)
+    for i, (train, test) in enumerate(StratifiedKFold(y, n_folds=n_folds)):
+        print type(train)
+        print type(test)
+        print train.shape
+        print test.shape
+        probas_ = classifier.fit(X[train], y[train]).predict_proba(X[test])
+        # Compute ROC curve and area under the curve
+        fpr, tpr, thresholds = roc_curve(y[test], probas_[:, 1], pos_label=1)
+        mean_tpr += interp(mean_fpr, fpr, tpr)
+        mean_tpr[0] = 0.0
+        roc_auc = auc(fpr, tpr)
+        plt.plot(fpr, tpr, lw=1, label='ROC fold %d (area = %0.2f)' % (i, roc_auc))
+    plt.plot([0, 1], [0, 1], '--', color=(0.6, 0.6, 0.6), label='Random')
+    mean_tpr /= n_folds
+    mean_tpr[-1] = 1.0
+    mean_auc = auc(mean_fpr, mean_tpr)
+    plt.plot(mean_fpr, mean_tpr, 'k--',
+                    label='Mean ROC (area = %0.2f)' % mean_auc, lw=2)
+    plt.xlim([-0.05, 1.05])
+    plt.ylim([-0.05, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver operating characteristic example')
+    plt.legend(loc="lower right")
+    plt.show()
+
+
 if __name__ == '__main__':
     trainPath = 'C:\mail\\trainMail'
     testPath = 'C:\mail\\testMail'
     totalWordBag, totalFilenNum = createWordBagWithSubject(trainPath)
     listPosts, listClasses = loadDataWithSubject(trainPath)
     print "loadDataSet finished"
+    X = CountVectorizer().fit_transform(listPosts)
+    print X.shape
+    y = np.array(listClasses)
+    plot_ROC_curve(svm.SVC(kernel='linear', probability=True), X, y, 10)
     x_train, x_test, y_train, y_test = train_test_split(listPosts, listClasses,
         test_size=0.3, stratify=listClasses, random_state=32)
     for nbc in nbcs:
         scores = evaluate_cross_validation(nbc, x_train, y_train, 10)
     predictListPosts, predictListClasses = loadDataWithSubject(testPath)
-    nbc_5.fit(x_train, y_train)
-    y_pred = nbc_5.predict(predictListPosts)
+    nbc_1.fit(x_train, y_train)
+    y_pred = nbc_1.predict(predictListPosts)
     preZip = zip(predictListPosts, y_pred)
     print "Predicted finished"

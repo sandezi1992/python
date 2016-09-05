@@ -6,6 +6,7 @@ import chardet
 import re
 import email.header
 
+
 def handleChinese(ustring):
     codeDetect = chardet.detect(ustring)["encoding"]
     ustring = unicode(ustring, codeDetect)
