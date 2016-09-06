@@ -23,6 +23,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, TfidfTransformer
 from sklearn.cross_validation import cross_val_score, KFold , StratifiedKFold
 from sklearn.feature_selection import SelectKBest, chi2
 from scipy.stats import sem
+from sklearn.grid_search import GridSearchCV
 from scipy import interp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -85,12 +86,10 @@ for line in open("stop_words.txt"):
 posPath = handleChinese('C:\mail\\trainMail\pos')
 negPath = handleChinese('C:\mail\\trainMail\\neg')
 
-wordToNum = Pipeline([
-    ('vect', CountVectorizer(stop_words=stop_words)),
-])
 
 nbc_1 = Pipeline([
     ('vect', CountVectorizer(stop_words=stop_words)),
+    ('select', SelectKBest(chi2, k=150)),
     ('clf', MultinomialNB()),
 ])
 
@@ -118,21 +117,30 @@ nbc_5 = Pipeline([
 
 nbc_6 = Pipeline([
     ('vect', TfidfVectorizer(stop_words=stop_words)),
+    ('select', SelectKBest(chi2)),
     ('clf', svm.SVC(kernel='linear')),
 ])
 
 
-nbcs = [nbc_1, nbc_2, nbc_3, nbc_4, nbc_5, nbc_6]
+parameters = {
+    'select__k': (10, 100, 300, 500, 1000, 2000, 3500),
+}
+
+# nbcs = [nbc_1, nbc_2, nbc_3, nbc_4, nbc_5, nbc_6]
+nbcs = [nbc_6]
 
 
 def evaluate_cross_validation(clf, X, y, K):
     cv = StratifiedKFold(y, K, shuffle=True, random_state=0)
     # cv = KFold(len(y), K, shuffle=True, random_state=0)
+    grid_search = GridSearchCV(clf, parameters, n_jobs=-1, verbose=1, cv=cv)
+    grid_search.fit(X, y)
+    print "grid search", grid_search.best_score_
     scores = cross_val_score(clf, X, y, cv=cv)
     # print scores
     print ("Mean score: {0:.3f} (+/-{1:.3f})").format(np.mean(scores),
                                                       sem(scores))
-    return np.mean(scores)
+    return grid_search, np.mean(scores)
 
 
 def loadDataWithSubject(path):
@@ -168,37 +176,6 @@ def loadDataWithSubject(path):
     return postingList, classVec
 
 
-def createWordBagWithSubject(path):
-    totalWordBag = []
-    subjectArray = []
-    fromArray = []
-    totalFileNum = 0
-    for parent, dirname, filenames in os.walk(handleChinese(path)):
-        for filename in filenames:
-            totalFileNum += 1
-            fp = open(os.path.join(parent, filename))
-            msg = email.message_from_file(fp)
-            subject = msg.get('subject')
-            subjectTmp = email.Header.decode_header(subject)[0][0]
-            fromTmp1 = email.Header.decode_header(email.utils.parseaddr(msg.get('from'))[0])[0][0]
-            fromTmp2 = email.utils.parseaddr(msg.get('from'))[1]
-            words = subjectTmp + ' ' + fromTmp1 + ' ' + fromTmp2
-            # print filename
-            # print words
-            seg_list = set(jieba.lcut(words))
-            for tmp in seg_list:
-                if tmp not in totalWordBag and len(tmp) >= 2 and tmp not in stop_words:
-                    totalWordBag.append(tmp)
-            subjectArray.append(subjectTmp)
-            fromArray.append(fromTmp1)
-    totalWordBagFile = open("totalWordBagSubject.txt", 'w')
-    wordBag = [line + '\n' for line in totalWordBag]
-    for x in wordBag:
-        totalWordBagFile.write(x)
-    totalWordBagFile.close()
-    return totalWordBag, totalFileNum
-
-
 def plot_ROC_curve(classifier, X, y, pos_label=1, n_folds=10):
     mean_tpr = 0.0
     mean_fpr = np.linspace(0, 1, 100)
@@ -228,7 +205,7 @@ def plot_ROC_curve(classifier, X, y, pos_label=1, n_folds=10):
 def exactFeature(listPosts, lis):
     Xfit = CountVectorizer(stop_words=stop_words).fit(listPosts)
     X = Xfit.transform(listPosts)
-    select = SelectKBest(chi2, k=50)
+    select = SelectKBest(chi2, k=500)
     select.fit_transform(X, listClasses)
     features = []
     for idx, val in enumerate(select.get_support()):
@@ -245,7 +222,6 @@ def exactFeature(listPosts, lis):
 if __name__ == '__main__':
     trainPath = 'C:\mail\\trainMail'
     testPath = 'C:\mail\\testMail'
-    totalWordBag, totalFilenNum = createWordBagWithSubject(trainPath)
     listPosts, listClasses = loadDataWithSubject(trainPath)
     print "loadDataSet finished"
     features = exactFeature(listPosts, listClasses)  # 后续只考虑这些特征，不是全部维度的
@@ -257,9 +233,14 @@ if __name__ == '__main__':
     x_train, x_test, y_train, y_test = train_test_split(listPosts, listClasses,
         test_size=0.3, stratify=listClasses, random_state=32)
     for nbc in nbcs:
-        scores = evaluate_cross_validation(nbc, x_train, y_train, 10)
+        grid_search, scores = evaluate_cross_validation(nbc, x_train, y_train, 10)
     predictListPosts, predictListClasses = loadDataWithSubject(testPath)
     nbc_1.fit(x_train, y_train)
     y_pred = nbc_1.predict(predictListPosts)
+    count = 0
+    for i in y_pred:
+        if i == 1:
+            count += 1
+    print count
     preZip = zip(predictListPosts, y_pred)
     print "Predicted finished"
