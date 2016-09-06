@@ -225,16 +225,35 @@ def plot_ROC_curve(classifier, X, y, pos_label=1, n_folds=10):
     plt.show()
 
 
+def exactFeature(listPosts, lis):
+    Xfit = CountVectorizer(stop_words=stop_words).fit(listPosts)
+    X = Xfit.transform(listPosts)
+    select = SelectKBest(chi2, k=50)
+    select.fit_transform(X, listClasses)
+    features = []
+    for idx, val in enumerate(select.get_support()):
+        if val == True:
+            features.append(Xfit.get_feature_names()[idx])
+    featureTxt = open("featureTxt.txt", 'w')
+    wordBag = [line + '\n' for line in features]
+    for x in wordBag:
+        featureTxt.write(x)
+    featureTxt.close()
+    return features
+
+
 if __name__ == '__main__':
     trainPath = 'C:\mail\\trainMail'
     testPath = 'C:\mail\\testMail'
     totalWordBag, totalFilenNum = createWordBagWithSubject(trainPath)
     listPosts, listClasses = loadDataWithSubject(trainPath)
     print "loadDataSet finished"
-    X = CountVectorizer().fit_transform(listPosts)
+    features = exactFeature(listPosts, listClasses)  # 后续只考虑这些特征，不是全部维度的
+    Xfit = CountVectorizer(stop_words=stop_words).fit(listPosts)
+    X = Xfit.transform(listPosts)
     y = np.array(listClasses)
     # plot_ROC_curve(svm.SVC(kernel='linear', probability=True), X, y, 10)
-    plot_ROC_curve(BernoulliNB(), X, y, 10)
+    # plot_ROC_curve(BernoulliNB(), X, y, 10)
     x_train, x_test, y_train, y_test = train_test_split(listPosts, listClasses,
         test_size=0.3, stratify=listClasses, random_state=32)
     for nbc in nbcs:
